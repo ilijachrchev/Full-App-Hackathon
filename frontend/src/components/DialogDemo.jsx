@@ -32,7 +32,7 @@ export function DialogDemo({ onAddVessel }) {
     name: '',
     type: 'Tanker',
     dimensions: '',
-    status: 'scheduled',
+    status: 'announcement',
   });
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -75,13 +75,13 @@ export function DialogDemo({ onAddVessel }) {
     const vessel = {
       vessel_type: formData.type,
       berth_type: formData.type,
-      berth_id: canFit ? targetBerth : null,
+      berth_id: targetBerth,
       eta_hour: eta.toISOString().split("T")[1].split(".")[0],
       planned_departure_hour: departure.toISOString().split("T")[1].split(".")[0],
       vessel_size: vesselSize,
       weather_score: 3,
       container_subtype: formData.type === "Container" ? "Others" : null,
-      status: canFit ? "Arrived" : "Waiting",
+      status: formData.status,
     };
 
     try {
@@ -168,6 +168,22 @@ export function DialogDemo({ onAddVessel }) {
             </div>
 
             <div className="space-y-2">
+  <label className="text-sm font-medium">Status</label>
+  <Select value={formData.status} onValueChange={(v) => handleSelectChange("status", v)}>
+    <SelectTrigger>
+      <SelectValue placeholder="Select status" />
+    </SelectTrigger>
+    <SelectContent className="bg-blue-900 text-white">
+      <SelectItem value="announcement">Announcement</SelectItem>
+      <SelectItem value="queue">Queue</SelectItem>
+      <SelectItem value="berth">Berth</SelectItem>
+      <SelectItem value="departure">Departure</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
+
+
+            <div className="space-y-2">
               <label className="text-sm font-medium">ETA</label>
               <input
                 type="date"
@@ -206,10 +222,10 @@ export function DialogDemo({ onAddVessel }) {
       <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
         <DialogContent className="text-center animate-in fade-in zoom-in-95 duration-300">
           <DialogHeader>
-            <DialogTitle className="text-green-600 text-2xl">✅ Vessel Added</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              The vessel was successfully added to the port system.
-            </DialogDescription>
+            <DialogDescription>
+  The vessel was added and assigned to the {formData.status === "berth" ? "berth" : "queue"}.
+</DialogDescription>
+
           </DialogHeader>
           <DialogFooter className="mt-4">
             <Button onClick={() => setShowSuccess(false)} className="bg-green-600 hover:bg-green-700 text-white">
