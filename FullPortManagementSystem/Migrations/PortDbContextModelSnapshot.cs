@@ -59,7 +59,7 @@ namespace FullPortManagementSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("VesselEvents");
+                    b.ToTable("VesselEvents", (string)null);
                 });
 #pragma warning restore 612, 618
         }

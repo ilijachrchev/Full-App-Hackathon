@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FullPortManagementSystem")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9fae3817c2a2eee986f875b8f719fe01599c3c3d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+026197fe510e4f95daa9df96139c109736c7e8ec")]
 [assembly: System.Reflection.AssemblyProductAttribute("FullPortManagementSystem")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FullPortManagementSystem")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

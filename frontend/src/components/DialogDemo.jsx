@@ -77,6 +77,7 @@ export function DialogDemo({ onAddVessel }) {
       vessel_size: parseInt(formData.dimensions),
       weather_score: 3,
       container_subtype: formData.type === "Container" ? "Others" : null,
+      status: formData.status,
     };
 
     try {
