@@ -5,7 +5,9 @@
         public int Id { get; set; } // Primary Key
         public string vessel_type { get; set; } // Tanker, RoRo, Container, Bulk
         public int vessel_size { get; set; } // Size in meters
-        
+
+        public string Status { get; set; } // Arrived, Departed, Waiting, Cancelled
+
         public TimeSpan eta_hour { get; set; } // ETA
         public TimeSpan planned_departure_hour { get; set; } // ETA + duration
 

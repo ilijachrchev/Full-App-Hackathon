@@ -26,6 +26,8 @@ builder.Services.AddCors(options =>
         });
 });
 
+builder.Services.AddHostedService<VesselStatusScheduler>(); // This will run every minute to update vessel status
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

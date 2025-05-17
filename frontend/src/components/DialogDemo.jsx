@@ -49,67 +49,67 @@ export function DialogDemo({ onAddVessel }) {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const berthMap = {
-      Tanker: "A",
-      Container: "B",
-      Bulk: "C",
-      RoRo: "D",
-    };
-
-    const eta = getCombinedDateTime();
-    const departure = new Date(eta.getTime() + 2 * 60 * 60 * 1000);
-
-    // Fetch all vessels to calculate current berth space
-    const allVessels = await fetch("http://localhost:5000/api/vesselEvent").then(res => res.json());
-
-    const targetBerth = berthMap[formData.type];
-    const vesselsInBerth = allVessels.filter(v => v.berth_id === targetBerth);
-    const usedSpace = vesselsInBerth.reduce((sum, v) => sum + v.vessel_size, 0);
-
-    const vesselSize = parseInt(formData.dimensions);
-    const berthMaxSize = 150;
-    const canFit = (usedSpace + vesselSize <= berthMaxSize);
-
-    const vessel = {
-      vessel_type: formData.type,
-      berth_type: formData.type,
-      berth_id: targetBerth,
-      eta_hour: eta.toISOString().split("T")[1].split(".")[0],
-      planned_departure_hour: departure.toISOString().split("T")[1].split(".")[0],
-      vessel_size: vesselSize,
-      weather_score: 3,
-      container_subtype: formData.type === "Container" ? "Others" : null,
-      status: formData.status,
-    };
-
-    try {
-      const res = await fetch("http://localhost:5000/api/vesselEvent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(vessel),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText);
-      }
-
-      setFormOpen(false);
-      setShowSuccess(true);
-      onAddVessel();
-
-      setFormData({ name: '', type: 'Tanker', dimensions: '', status: 'scheduled' });
-      setSelectedDate(new Date());
-      setSelectedHour("00");
-      setSelectedMinute("00");
-    } catch (err) {
-      console.error("❌ Could not submit vessel:", err);
-      setErrorMessage("❌ Not enough berth space: " + vesselSize + "m cannot fit into " + targetBerth + ". Only " + (berthMaxSize - usedSpace) + "m left.");
-      setShowError(true);
-    }
+  const berthMap = {
+    Tanker: "A",
+    Container: "B",
+    Bulk: "C",
+    RoRo: "D",
   };
+
+  const eta = getCombinedDateTime();
+  const departure = new Date(eta.getTime() + 2 * 60 * 60 * 1000);
+
+  // Fetch all vessels to calculate current berth space
+  const allVessels = await fetch("http://localhost:5000/api/vesselEvent").then(res => res.json());
+
+  const targetBerth = berthMap[formData.type];
+  const vesselsInBerth = allVessels.filter(v => v.berth_type === formData.type && v.status === "berth");
+  const usedSpace = vesselsInBerth.reduce((sum, v) => sum + v.vessel_size, 0);
+
+  const vesselSize = parseInt(formData.dimensions);
+  const berthMaxSize = 150;
+
+  const vessel = {
+    vessel_type: formData.type,
+    berth_type: formData.type,
+    berth_id: bearthMap[formData.type],
+    eta_hour: eta.toISOString().split("T")[1].split(".")[0],
+    planned_departure_hour: departure.toISOString().split("T")[1].split(".")[0],
+    vessel_size: vesselSize,
+    weather_score: 3,
+    container_subtype: formData.type === "Container" ? "Others" : null,
+    status: formData.status,  // usually 'announcement'
+  };
+
+  try {
+    const res = await fetch("http://localhost:5000/api/vesselEvent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(vessel),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(errorText);
+    }
+
+    setFormOpen(false);
+    setShowSuccess(true);
+    onAddVessel();
+
+    setFormData({ name: '', type: 'Tanker', dimensions: '', status: 'announcement' });
+    setSelectedDate(new Date());
+    setSelectedHour("00");
+    setSelectedMinute("00");
+  } catch (err) {
+    console.error("❌ Could not submit vessel:", err);
+    setErrorMessage("❌ Failed to add vessel. Make sure all fields are valid.");
+    setShowError(true);
+  }
+};
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
