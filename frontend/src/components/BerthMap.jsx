@@ -15,9 +15,7 @@ export function BerthMap({ vessels = [] }) {
   // Group only ARRIVED vessels by berth
   const vesselsByBerth = {};
 
-  vessels
-    .filter(v => v.status?.toLowerCase() === "arrived") // lowercase-safe!
-    .forEach(v => {
+  vessels.forEach(v => {
       if (!v.berth_id) return;
       if (!vesselsByBerth[v.berth_id]) vesselsByBerth[v.berth_id] = [];
       vesselsByBerth[v.berth_id].push(v.vessel_size);

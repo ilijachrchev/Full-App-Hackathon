@@ -3,21 +3,12 @@ import { PlusCircle } from 'lucide-react';
 import { format } from "date-fns";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 
@@ -34,6 +25,8 @@ export function DialogDemo({ onAddVessel }) {
 
   const [formOpen, setFormOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [formData, setFormData] = useState({
     name: '',
@@ -66,18 +59,29 @@ export function DialogDemo({ onAddVessel }) {
     };
 
     const eta = getCombinedDateTime();
-    const departure = new Date(eta.getTime() + 2 * 60 * 60 * 1000); // ETA + 2h
+    const departure = new Date(eta.getTime() + 2 * 60 * 60 * 1000);
+
+    // Fetch all vessels to calculate current berth space
+    const allVessels = await fetch("http://localhost:5000/api/vesselEvent").then(res => res.json());
+
+    const targetBerth = berthMap[formData.type];
+    const vesselsInBerth = allVessels.filter(v => v.berth_id === targetBerth);
+    const usedSpace = vesselsInBerth.reduce((sum, v) => sum + v.vessel_size, 0);
+
+    const vesselSize = parseInt(formData.dimensions);
+    const berthMaxSize = 150;
+    const canFit = (usedSpace + vesselSize <= berthMaxSize);
 
     const vessel = {
       vessel_type: formData.type,
       berth_type: formData.type,
-      berth_id: berthMap[formData.type],
-      eta_hour: eta.toISOString().split("T")[1].replace("Z", "").split(".")[0],
-      planned_departure_hour: departure.toISOString().split("T")[1].replace("Z", "").split(".")[0],
-      vessel_size: parseInt(formData.dimensions),
+      berth_id: canFit ? targetBerth : null,
+      eta_hour: eta.toISOString().split("T")[1].split(".")[0],
+      planned_departure_hour: departure.toISOString().split("T")[1].split(".")[0],
+      vessel_size: vesselSize,
       weather_score: 3,
       container_subtype: formData.type === "Container" ? "Others" : null,
-      status: formData.status,
+      status: canFit ? "Arrived" : "Waiting",
     };
 
     try {
@@ -92,38 +96,32 @@ export function DialogDemo({ onAddVessel }) {
         throw new Error(errorText);
       }
 
-      // Clear form and close the dialog
       setFormOpen(false);
       setShowSuccess(true);
       onAddVessel();
 
-      setFormData({
-        name: '',
-        type: 'Tanker',
-        dimensions: '',
-        status: 'scheduled',
-      });
+      setFormData({ name: '', type: 'Tanker', dimensions: '', status: 'scheduled' });
       setSelectedDate(new Date());
       setSelectedHour("00");
       setSelectedMinute("00");
     } catch (err) {
       console.error("❌ Could not submit vessel:", err);
-      alert("❌ Could not submit vessel data");
+      setErrorMessage("❌ Not enough berth space: " + vesselSize + "m cannot fit into " + targetBerth + ". Only " + (berthMaxSize - usedSpace) + "m left.");
+      setShowError(true);
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (name, value) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
     <>
-      {/* Add Vessel Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" className="w-full">
@@ -139,13 +137,13 @@ export function DialogDemo({ onAddVessel }) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">Vessel Name</label>
-              <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
+              <label className="text-sm font-medium">Vessel Name</label>
+              <Input name="name" value={formData.name} onChange={handleChange} required />
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="type" className="text-sm font-medium">Vessel Type</label>
-              <Select value={formData.type} onValueChange={(value) => handleSelectChange("type", value)}>
+              <label className="text-sm font-medium">Vessel Type</label>
+              <Select value={formData.type} onValueChange={v => handleSelectChange("type", v)}>
                 <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent className="bg-blue-900 text-white">
                   <SelectItem value="Tanker">Tanker</SelectItem>
@@ -158,28 +156,13 @@ export function DialogDemo({ onAddVessel }) {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Vessel Size</label>
-              <Select value={formData.dimensions} onValueChange={(value) => handleSelectChange("dimensions", value)}>
+              <Select value={formData.dimensions} onValueChange={v => handleSelectChange("dimensions", v)}>
                 <SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger>
                 <SelectContent className="bg-blue-900 text-white">
                   <SelectItem value="50">50m</SelectItem>
                   <SelectItem value="75">75m</SelectItem>
                   <SelectItem value="100">100m</SelectItem>
                   <SelectItem value="150">150m</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select value={formData.status} onValueChange={(value) => handleSelectChange("status", value)}>
-                <SelectTrigger className={`transition-colors ${getStatusColor(formData.status)}`}>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent className="bg-blue-900 text-white">
-                  <SelectItem value="scheduled">Scheduled</SelectItem>
-                  <SelectItem value="en-route">En Route</SelectItem>
-                  <SelectItem value="waiting">Waiting</SelectItem>
-                  <SelectItem value="berthed">Berthed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -205,7 +188,7 @@ export function DialogDemo({ onAddVessel }) {
                 <div className="flex-1">
                   <label className="text-sm font-medium">Minutes</label>
                   <select className="w-full border px-2 py-2 rounded" value={selectedMinute} onChange={(e) => setSelectedMinute(e.target.value)}>
-                    {["00", "15", "30", "45"].map((min) => (
+                    {["00", "15", "30", "45"].map(min => (
                       <option key={min} value={min}>{min}</option>
                     ))}
                   </select>
@@ -220,7 +203,6 @@ export function DialogDemo({ onAddVessel }) {
         </DialogContent>
       </Dialog>
 
-      {/* ✅ Success Popup Dialog */}
       <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
         <DialogContent className="text-center animate-in fade-in zoom-in-95 duration-300">
           <DialogHeader>
@@ -231,6 +213,22 @@ export function DialogDemo({ onAddVessel }) {
           </DialogHeader>
           <DialogFooter className="mt-4">
             <Button onClick={() => setShowSuccess(false)} className="bg-green-600 hover:bg-green-700 text-white">
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showError} onOpenChange={setShowError}>
+        <DialogContent className="text-center animate-in fade-in zoom-in-95 duration-300">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 text-xl">❌ Cannot Add Vessel</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              {errorMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button onClick={() => setShowError(false)} className="bg-red-600 hover:bg-red-700 text-white">
               OK
             </Button>
           </DialogFooter>

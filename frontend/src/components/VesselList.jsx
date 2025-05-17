@@ -15,18 +15,37 @@ import { useState, useEffect } from 'react';
 
 export function VesselList() {
   const [vessels, setVessels] = useState([]);
+  const [berthAvailableSizes, setBerthAvailableSizes] = useState({});
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/vesselEvent")
-      .then((res) => res.json())
-      .then((data) => setVessels(data))
-      .catch((err) => console.error("Error loading vessels:", err));
+    fetchVessels();
   }, []);
 
-  const addVessel = () => {
+  const fetchVessels = () => {
     fetch("http://localhost:5000/api/vesselEvent")
       .then((res) => res.json())
-      .then((data) => setVessels(data));
+      .then((data) => {
+        setVessels(data);
+        setBerthAvailableSizes(calculateAvailableSizes(data));
+      })
+      .catch((err) => console.error("Error loading vessels:", err));
+  };
+
+  const calculateAvailableSizes = (vesselList) => {
+    const maxSize = 150;
+    const usage = { A: 0, B: 0, C: 0, D: 0 };
+
+    vesselList.forEach((v) => {
+      if (v.berth_id && v.vessel_size) {
+        usage[v.berth_id] += v.vessel_size;
+      }
+    });
+
+    const result = {};
+    for (const key in usage) {
+      result[key] = Math.max(0, maxSize - usage[key]);
+    }
+    return result;
   };
 
   return (
@@ -34,7 +53,7 @@ export function VesselList() {
       <CardHeader>
         <CardTitle>Vessels</CardTitle>
         <CardDescription>Manage and track all vessels</CardDescription>
-        <DialogDemo onAddVessel={addVessel} />
+        <DialogDemo onAddVessel={fetchVessels} availableSizes={berthAvailableSizes} />
       </CardHeader>
 
       <CardContent>
@@ -97,22 +116,20 @@ export function VesselList() {
                     <Badge
                       variant="outline"
                       className={
-                        vessel.status === "berthed"
-                          ? "border-green-500 bg-green-50 text-green-700"
-                          : vessel.status === "scheduled"
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : vessel.status === "en-route"
-                          ? "border-amber-500 bg-amber-50 text-amber-700"
-                          : "border-gray-500 bg-gray-50 text-gray-700"
-                      }
+  vessel.status === "berthed"
+    ? "border-green-500 bg-green-50 text-green-700"
+    : vessel.status === "scheduled"
+    ? "border-blue-500 bg-blue-50 text-blue-700"
+    : vessel.status === "en-route"
+    ? "border-amber-500 bg-amber-50 text-amber-700"
+    : vessel.status === "waiting"
+    ? "border-gray-500 bg-gray-50 text-gray-700"
+    : "border-gray-300 bg-gray-100 text-gray-600" // fallback for undefined
+}
                     >
-                      {vessel.status === "berthed"
-                        ? "Berthed"
-                        : vessel.status === "scheduled"
-                        ? "Scheduled"
-                        : vessel.status === "en-route"
-                        ? "En Route"
-                        : "Waiting"}
+                      {vessel.status
+                      ? vessel.status.charAt(0).toUpperCase() + vessel.status.slice(1)
+                    : "Unknown"}
                     </Badge>
                   </TableCell>
                   <TableCell>
