@@ -1,0 +1,12 @@
+[
+        {"vessel_type": "Container", "vessel_size": 100, "eta_hour": 20.00, "planned_departure_hour": 22.00, "berth_type": "Container", "weather_score": 0, "container_subtype": "Others"},
+                {"vessel_type": "Container", "vessel_size": 50, "eta_hour": 20.00, "planned_departure_hour": 22.00, "berth_type": "Container", "weather_score": 0, "container_subtype": "Others"},  
+       {"vessel_type": "Tanker", "vessel_size": 50, "eta_hour": 20.00, "planned_departure_hour": 23.00, "berth_type": "Tanker", "weather_score": 0, "container_subtype": "ShortExpiryDateFood"},
+        {"vessel_type": "Tanker", "vessel_size": 50, "eta_hour": 20.00, "planned_departure_hour": 22.00, "berth_type": "Tanker", "weather_score": 0, "container_subtype": "Others"},
+                {"vessel_type": "Tanker", "vessel_size": 50, "eta_hour": 20.00, "planned_departure_hour": 22.00, "berth_type": "Tanker", "weather_score": 0, "container_subtype": "Others"},
+        {"vessel_type": "Bulk", "vessel_size": 75, "eta_hour": 20.00, "planned_departure_hour": 22.00, "berth_type": "Bulk", "weather_score": 0, "container_subtype": "Others"},
+                {"vessel_type": "Bulk", "vessel_size": 75,"eta_hour": 20.00, "planned_departure_hour": 22.00, "berth_type": "Bulk", "weather_score": 0, "container_subtype": "Others"}
+]
+
+
+

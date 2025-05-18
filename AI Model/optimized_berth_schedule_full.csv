@@ -1,0 +1,8 @@
+vessel_index,assigned_berth,scheduled_start,scheduled_end,waiting_time,vessel_type,vessel_size,planned_departure_hour,adjusted_eta_hour,dtb,realtime_status
+2,A,20.0,23.5,0,Tanker,50,23.0,20.0,0.25,Currently berthed
+3,A,20.0,22.5,0,Tanker,50,22.0,20.0,0.25,Currently berthed
+4,A,20.0,22.5,0,Tanker,50,22.0,20.0,0.25,Currently berthed
+0,B,20.0,22.5,0,Container,100,22.0,20.0,0.25,Currently berthed
+1,B,20.0,22.5,0,Container,50,22.0,20.0,0.25,Currently berthed
+5,C,20.0,22.5,0,Bulk,75,22.0,20.0,0.25,Currently berthed
+6,C,20.0,22.5,0,Bulk,75,22.0,20.0,0.25,Currently berthed
