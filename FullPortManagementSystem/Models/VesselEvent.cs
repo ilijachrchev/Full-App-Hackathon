@@ -1,20 +1,30 @@
-﻿namespace FullPortManagementSystem.Models
+﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace FullPortManagementSystem.Models
 {
     public class VesselEvent
     {
-        public int Id { get; set; } // Primary Key
-        public string vessel_type { get; set; } // Tanker, RoRo, Container, Bulk
-        public int vessel_size { get; set; } // Size in meters
+        public int Id { get; set; }
 
-        public string Status { get; set; } // Arrived, Departed, Waiting, Cancelled
+        public string vessel_type { get; set; } = string.Empty;
+        public int vessel_size { get; set; }
 
-        public TimeSpan eta_hour { get; set; } // ETA
-        public TimeSpan planned_departure_hour { get; set; } // ETA + duration
+        // ← Add this back in:
+        [Column("status")]
+        public string Status { get; set; } = "Announcement";
 
-        public string berth_id { get; set; } // A, B, C, D
-        public string berth_type { get; set; } // Tanker, RoRo, Container, Bulk
-        public int weather_score { get; set; } // 0-5
+        public TimeSpan eta_hour { get; set; }
+        public TimeSpan planned_departure_hour { get; set; }
 
-        public string? container_subtype { get; set; } // Nullable, only used for Containers
+        [Column("berth_id")]
+        public string? berth_id { get; set; }
+
+        [Column("berth_type")]
+        public string? berth_type { get; set; }
+
+        public int weather_score { get; set; }
+
+        public string? container_subtype { get; set; }
     }
 }

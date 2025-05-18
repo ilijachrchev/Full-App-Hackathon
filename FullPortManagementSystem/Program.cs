@@ -26,6 +26,12 @@ builder.Services.AddCors(options =>
         });
 });
 
+builder.Services.AddHttpClient("MlService", client =>
+{
+    client.BaseAddress = new Uri("https://49a4-2001-1470-ff35-1-8d43-a825-7e8b-6c0a.ngrok-free.app/api/vesselEvent"); // ← your ngrok URL
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
 builder.Services.AddHostedService<VesselStatusScheduler>(); // This will run every minute to update vessel status
 
 var app = builder.Build();

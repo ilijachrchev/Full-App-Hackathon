@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Hosting;
-using System.Threading;
-using System.Threading.Tasks;
-using FullPortManagementSystem.Data;
+﻿using FullPortManagementSystem.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 public class VesselStatusScheduler : BackgroundService
 {
@@ -20,77 +20,56 @@ public class VesselStatusScheduler : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            using (var scope = _serviceProvider.CreateScope())
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<PortDbContext>();
+            var now = DateTime.UtcNow.TimeOfDay;
+
+            // 1. Promote ANNOUNCEMENT → QUEUE
+            var announcements = await db.VesselEvents
+                .Where(v => v.Status == "announcement" && v.eta_hour <= now)
+                .ToListAsync();
+
+            foreach (var vessel in announcements)
             {
-                var db = scope.ServiceProvider.GetRequiredService<PortDbContext>();
-                var now = DateTime.UtcNow.TimeOfDay;
-
-                // 1. Handle DEPARTURES
-                var vesselsToDepart = await db.VesselEvents
-                    .Where(v => v.Status == "berth" && v.planned_departure_hour <= now)
-                    .ToListAsync();
-
-                foreach (var vessel in vesselsToDepart)
-                {
-                    vessel.Status = "departure";
-                }
-
-                // 2. Promote ANNOUNCEMENTS to queue or berth
-                var announcements = await db.VesselEvents
-                    .Where(v => v.Status == "announcement")
-                    .ToListAsync();
-
-                foreach (var vessel in announcements)
-                {
-                    if (vessel.eta_hour <= now)
-                    {
-                        var usedSize = await db.VesselEvents
-                            .Where(v => v.berth_id == vessel.berth_id && v.Status == "berth")
-                            .SumAsync(v => v.vessel_size);
-
-                        if (usedSize + vessel.vessel_size <= MaxBerthSize)
-                        {
-                            vessel.Status = "berth";
-                        }
-                        else
-                        {
-                            vessel.Status = "queue";
-                        }
-                    }
-                }
-
-                // 3. Promote QUEUED vessels to BERTH if space is available (FIFO per berth)
-                var queueGroups = await db.VesselEvents
-                    .Where(v => v.Status == "queue")
-                    .OrderBy(v => v.eta_hour)
-                    .GroupBy(v => v.berth_id)
-                    .ToListAsync();
-
-                foreach (var group in queueGroups)
-                {
-                    var berthId = group.Key;
-
-                    var usedSize = await db.VesselEvents
-                        .Where(v => v.berth_id == berthId && v.Status == "berth")
-                        .SumAsync(v => v.vessel_size);
-
-                    foreach (var vessel in group)
-                    {
-                        if (usedSize + vessel.vessel_size <= MaxBerthSize)
-                        {
-                            vessel.Status = "berth";
-                            usedSize += vessel.vessel_size;
-                        }
-                        else
-                        {
-                            vessel.Status = "queue";
-                        }
-                    }
-                }
-
-                await db.SaveChangesAsync();
+                vessel.Status = "queue";
             }
 
+            await db.SaveChangesAsync();
+
+            // 2. Promote BERTH → DEPARTURE
+            var departures = await db.VesselEvents
+                .Where(v => v.Status == "berth" && v.planned_departure_hour <= now)
+                .ToListAsync();
+
+            foreach (var vessel in departures)
+            {
+                vessel.Status = "departure";
+            }
+
+            await db.SaveChangesAsync();
+
+            // 3. Promote QUEUE → BERTH
+            var queueVessels = await db.VesselEvents
+                .Where(v => v.Status == "queue")
+                .OrderBy(v => v.eta_hour)
+                .ToListAsync();
+
+            foreach (var vessel in queueVessels)
+            {
+                var vesselsInBerth = await db.VesselEvents
+                    .Where(vb => vb.berth_id == vessel.berth_id && vb.Status == "berth")
+                    .ToListAsync();
+
+                int used = vesselsInBerth.Sum(v => v.vessel_size);
+
+                if (used + vessel.vessel_size <= MaxBerthSize)
+                {
+                    vessel.Status = "berth";
+                    used += vessel.vessel_size;
+                }
+            }
+
+            await db.SaveChangesAsync();
             await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
         }
     }
